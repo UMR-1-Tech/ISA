@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U-Tech Call Auditor & ISA Training Simulator</title>
+    <!-- Tailwind CSS Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #090d16 0%, #020617 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 5px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center">
+
+    <div class="w-full max-w-5xl flex flex-col gap-6">
+        
+        <!-- App Top Header Area -->
+        <header class="w-full glass-panel rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+            <div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent tracking-wide">U-Tech Call Auditor</h1>
+                <p class="text-xs text-slate-400 mt-0.5">Real-Time Intelligent ISA Training Infrastructure</p>
+            </div>
+            
+            <!-- Target Selection Modifiers -->
+            <div class="flex flex-wrap items-center gap-3 text-xs w-full md:w-auto">
+                <div class="flex flex-col gap-1">
+                    <label class="text-slate-500 font-medium">Agent Name</label>
+                    <input type="text" id="agent-name-field" placeholder="Enter your name" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 focus:outline-none text-slate-300 w-32 placeholder-slate-600">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-slate-500 font-medium">Scenario Profile</label>
+                    <select id="sim-mode" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 focus:outline-none text-slate-300">
+                        <option value="Inbound Lead Request">Inbound Zillow Lead</option>
+                        <option value="Outbound Cold Circle Prospecting">Cold Circle Prospecting</option>
+                        <option value="FSBO Outbound Call">FSBO Lead Follow-up</option>
+                    </select>
+                </div>
+                
+                <div class="flex flex-col gap-1">
+                    <label class="text-slate-500 font-medium">Prospect Objection Level</label>
+                    <select id="sim-diff" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 focus:outline-none text-slate-300">
+                        <option value="Low Resistance">Low Resistance</option>
+                        <option value="Medium Defensive Tone" selected>Medium / Natural</option>
+                        <option value="High Friction / Aggressive Objections">High Friction / Hard Mode</option>
+                    </select>
+                </div>
+
+                <button id="session-action-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-3 rounded-xl transition duration-200 self-end shadow-lg shadow-blue-900/20">
+                    Launch Interactive Call
+                </button>
+
+                <button id="history-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-3 rounded-xl transition duration-200 self-end shadow-lg text-xs">
+                    History &amp; Leaderboard
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dynamic Interface Layout Block -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Interaction Dialogue Matrix Column -->
+            <div class="lg:col-span-2 flex flex-col h-[520px] glass-panel rounded-2xl p-5 shadow-lg">
+                <div class="flex justify-between items-center border-b border-slate-800/80 pb-3 mb-4">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Interaction Feed Stream</h2>
+                    <span id="call-badge" class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-mono tracking-tight">DISCONNECTED</span>
+                </div>
+
+                <!-- Chat Feed Log Console View -->
+                <div id="live-chat-panel" class="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-custom text-sm flex flex-col justify-center">
+                    <div id="empty-state-notice" class="text-slate-500 italic text-center text-xs">
+                        Select parameter configs and click launch to run the dynamic execution testing matrix.
+                    </div>
+                </div>
+
+                <!-- Text-Fallback Input Box Form Container -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+                    <div class="flex gap-2">
+                        <input type="text" id="agent-chat-field" disabled placeholder="Establish a live connection channel first..." class="flex-1 bg-slate-950/50 border border-slate-800 focus:border-blue-500/80 rounded-xl px-4 py-3 text-sm focus:outline-none text-slate-200 placeholder-slate-600 transition disabled:opacity-50">
+                        <button id="agent-dispatch-btn" disabled class="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white font-medium px-5 rounded-xl text-sm transition">Send</button>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-slate-500 px-1">
+                        <span id="previewText">System Status Indicator: Offline</span>
+                        <span>Press Enter ↵</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Analytics Framework Dashboard Column -->
+            <div class="flex flex-col gap-6">
+                
+                <!-- Live Analytical Metric Auditing Matrix -->
+                <div class="glass-panel rounded-2xl p-4 shadow-lg flex flex-col">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Live Scorecard Indicators</h2>
+                    <div class="grid grid-cols-2 gap-3 mb-2">
+                        <div class="bg-slate-950/40 border border-slate-900 rounded-xl p-3 text-center">
+                            <div class="text-[10px] uppercase text-slate-500 font-semibold tracking-wider">Qualification</div>
+                            <div id="score-qual" class="text-lg font-bold text-blue-400 mt-0.5">0 / 25</div>
+                        </div>
+                        <div class="bg-slate-950/40 border border-slate-900 rounded-xl p-3 text-center">
+                            <div class="text-[10px] uppercase text-slate-500 font-semibold tracking-wider">Script Adherence</div>
+                            <div id="score-script" class="text-lg font-bold text-emerald-400 mt-0.5">25 / 25</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Qualification Requirement Tracker Verification Matrix -->
+                <div class="glass-panel rounded-2xl p-4 shadow-lg flex-1">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Verification Checklist</h2>
+                    <ul id="checklist-tracker" class="space-y-2 text-xs text-slate-400">
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-1">❌ 1. Property Type Anchor</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-2">❌ 2. Beds/Baths Requirements</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-3">❌ 3. Motivation / Timeline</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-4">❌ 4. Target Location Area</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-5">❌ 5. Financial Budget Limit</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-6">❌ 6. Financing/Pre-Approval</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-7">❌ 7. Agent Contract Check</li>
+                        <li class="flex items-center gap-2 border-b border-slate-900/50 pb-1.5" id="pt-8">❌ 8. Decision Maker Identity</li>
+                        <li class="flex items-center gap-2" id="pt-9">❌ 9. Callback Window Hook</li>
+                    </ul>
+                </div>
+
+                <!-- Behavioral Infractions System Notification Log Container -->
+                <div class="glass-panel rounded-2xl p-4 border-l-4 border-red-500/40 bg-red-950/5 shadow-lg">
+                    <h2 class="text-xs font-semibold text-red-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <span>Auditor Behavioral Infractions</span>
+                    </h2>
+                    <div id="infraction-feed-log" class="text-xs text-slate-400 max-h-24 overflow-y-auto space-y-2 scrollbar-custom">
+                        No critical script execution infractions recorded.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- History & Leaderboard Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel bg-slate-950/90 rounded-2xl p-6 shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-y-auto scrollbar-custom">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Call History &amp; Leaderboard</h2>
+                <button id="history-close-btn" class="text-slate-400 hover:text-white text-sm px-3 py-1 rounded-lg border border-slate-800">Close</button>
+            </div>
+
+            <div id="history-loading" class="text-slate-500 text-sm italic">Loading session data...</div>
+
+            <div id="history-content" class="hidden flex flex-col gap-6">
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Agent Leaderboard</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-800">
+                                    <th class="py-2 pr-4">Agent</th>
+                                    <th class="py-2 pr-4">Calls</th>
+                                    <th class="py-2 pr-4">Avg Qualification</th>
+                                    <th class="py-2 pr-4">Avg Script</th>
+                                    <th class="py-2 pr-4">Best Qual.</th>
+                                    <th class="py-2 pr-4">Infractions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body" class="text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Recent Sessions</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-800">
+                                    <th class="py-2 pr-4">Date</th>
+                                    <th class="py-2 pr-4">Agent</th>
+                                    <th class="py-2 pr-4">Scenario</th>
+                                    <th class="py-2 pr-4">Difficulty</th>
+                                    <th class="py-2 pr-4">Qualification</th>
+                                    <th class="py-2 pr-4">Script</th>
+                                    <th class="py-2 pr-4">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessions-body" class="text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Application Execution Infrastructure -->
+    <script>
+        let callActiveState = false;
+        let currentStep = "INTRO_FLOW";
+        const completedDataPoints = new Set();
+        
+        let currentMode = "Inbound Lead Request";
+        let currentDifficulty = "Medium Defensive Tone";
+
+        // Performance Assessment Metrics Object
+        let scores = { qualification: 0, script: 25 };
+
+        // Session persistence tracking (for MongoDB save on call end)
+        let transcriptLog = [];
+        let infractionsLog = [];
+        let sessionStartTime = null;
+
+        const sessionActionBtn = document.getElementById('session-action-btn');
+        const agentDispatchBtn = document.getElementById('agent-dispatch-btn');
+        const agentChatField = document.getElementById('agent-chat-field');
+        const agentNameField = document.getElementById('agent-name-field');
+        const liveChatPanel = document.getElementById('live-chat-panel');
+        const callBadge = document.getElementById('call-badge');
+        const previewText = document.getElementById('previewText');
+        const infractionFeedLog = document.getElementById('infraction-feed-log');
+        const emptyStateNotice = document.getElementById('empty-state-notice');
+
+        const historyBtn = document.getElementById('history-btn');
+        const historyModal = document.getElementById('history-modal');
+        const historyCloseBtn = document.getElementById('history-close-btn');
+        const historyLoading = document.getElementById('history-loading');
+        const historyContent = document.getElementById('history-content');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const sessionsBody = document.getElementById('sessions-body');
+
+        const voiceSynthEngine = window.speechSynthesis;
+
+        // Configuration Event Modifiers
+        document.getElementById('sim-mode').addEventListener('change', (e) => currentMode = e.target.value);
+        document.getElementById('sim-diff').addEventListener('change', (e) => currentDifficulty = e.target.value);
+
+        sessionActionBtn.addEventListener('click', () => {
+            if (!callActiveState) {
+                initiateLiveSession();
+            } else {
+                terminateLiveSession();
+            }
+        });
+
+        agentDispatchBtn.addEventListener('click', parseInputPayload);
+        agentChatField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') parseInputPayload();
+        });
+
+        function initiateLiveSession() {
+            if (!agentNameField.value.trim()) {
+                agentNameField.focus();
+                agentNameField.classList.add('border-red-500');
+                previewText.textContent = "Enter an agent name before launching a call.";
+                return;
+            }
+            agentNameField.classList.remove('border-red-500');
+
+            callActiveState = true;
+            completedDataPoints.clear();
+            scores.qualification = 0;
+            scores.script = 25;
+            currentStep = "INTRO_FLOW";
+            transcriptLog = [];
+            infractionsLog = [];
+            sessionStartTime = new Date();
+            
+            // UI Toggle Adjustments
+            emptyStateNotice.style.display = 'none';
+            liveChatPanel.innerHTML = '';
+            liveChatPanel.classList.remove('justify-center');
+            infractionFeedLog.innerHTML = 'No critical script execution infractions recorded.';
+            resetVisualChecklist();
+            updateScoreDisplay();
+
+            sessionActionBtn.textContent = "Terminate Live Call";
+            sessionActionBtn.className = "bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-3 rounded-xl transition duration-200 self-end shadow-lg shadow-red-900/20";
+            
+            callBadge.textContent = "LIVE CONNECTION CONNECTED";
+            callBadge.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono font-semibold tracking-tight animate-pulse";
+            
+            agentChatField.disabled = false;
+            agentDispatchBtn.disabled = false;
+            agentChatField.placeholder = "Speak or enter script criteria to the prospect...";
+            agentChatField.focus();
+
+            // Run first system intro line
+            const defaultIntro = "Hello?";
+            addMessage('prospect', `Prospect: "${defaultIntro}"`);
+            previewText.textContent = "Awaiting response pipeline input...";
+            speak(defaultIntro);
+        }
+
+        function terminateLiveSession() {
+            if (transcriptLog.length > 0) {
+                saveSessionToServer();
+            }
+
+            callActiveState = false;
+            sessionActionBtn.textContent = "Launch Interactive Call";
+            sessionActionBtn.className = "bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-3 rounded-xl transition duration-200 self-end shadow-lg shadow-blue-900/20";
+            
+            callBadge.textContent = "DISCONNECTED";
+            callBadge.className = "text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-mono tracking-tight";
+            
+            agentChatField.disabled = true;
+            agentDispatchBtn.disabled = true;
+            agentChatField.value = '';
+            agentChatField.placeholder = "Establish a live connection channel first...";
+            previewText.textContent = "System Status Indicator: Offline";
+            
+            voiceSynthEngine.cancel();
+            liveChatPanel.innerHTML = '';
+            liveChatPanel.appendChild(emptyStateNotice);
+            liveChatPanel.classList.add('justify-center');
+            emptyStateNotice.style.display = 'block';
+        }
+
+        function parseInputPayload() {
+            const rawText = agentChatField.value.trim();
+            if (rawText && callActiveState) {
+                handleSpokenInput(rawText);
+                agentChatField.value = '';
+            }
+        }
+
+        function addMessage(roleType, targetString) {
+            const rowWrapper = document.createElement('div');
+            rowWrapper.className = roleType === 'agent' ? 'w-full flex justify-end pl-8' : 'w-full flex justify-start pr-8';
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.className = roleType === 'agent'
+                ? 'bg-blue-600 border border-blue-500/30 text-white text-xs px-4 py-2.5 rounded-2xl rounded-tr-none shadow-md'
+                : 'bg-slate-900 border border-slate-800/80 text-slate-200 text-xs px-4 py-2.5 rounded-2xl rounded-tl-none shadow-md';
+            
+            messageBubble.textContent = targetString;
+            rowWrapper.appendChild(messageBubble);
+            liveChatPanel.appendChild(rowWrapper);
+            liveChatPanel.scrollTop = liveChatPanel.scrollHeight;
+
+            transcriptLog.push({ role: roleType, text: targetString, timestamp: new Date().toISOString() });
+        }
+
+        async function handleSpokenInput(text) {
+            addMessage('agent', `You: "${text}"`);
+            previewText.textContent = "Inference tracking processing active...";
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userInput: text,
+                        currentStep: currentStep,
+                        completedDataPoints: Array.from(completedDataPoints),
+                        currentMode: currentMode,
+                        currentDifficulty: currentDifficulty
+                    })
+                });
+
+                if (!response.ok) throw new Error('Gateway connectivity interrupted.');
+
+                const processingResult = await response.json();
+                previewText.textContent = "Listening for response input...";
+
+                // Audit infraction feedback check
+                if (processingResult.isMistake) {
+                    appendInfraction(processingResult.feedback);
+                    scores.script = Math.max(0, scores.script - 5);
+                }
+
+                // Criteria extraction index check
+                if (processingResult.extractedPointId && !completedDataPoints.has(processingResult.extractedPointId)) {
+                    completedDataPoints.add(processingResult.extractedPointId);
+                    scores.qualification = Math.round((completedDataPoints.size / 9) * 25);
+                    
+                    const rowLine = document.getElementById(`pt-${processingResult.extractedPointId}`);
+                    if (rowLine) rowLine.innerHTML = rowLine.innerHTML.replace('❌', '✅');
+                }
+
+                currentStep = processingResult.stepUpdate || currentStep;
+                updateScoreDisplay();
+
+                addMessage('prospect', `Prospect: "${processingResult.reply}"`);
+                speak(processingResult.reply);
+
+                if (completedDataPoints.size === 9) {
+                    setTimeout(() => {
+                        addMessage('prospect', "System: [Audit Completed. Perfect Score Criteria Acquired.]");
+                        previewText.textContent = "Simulation Successful.";
+                    }, 1500);
+                }
+
+            } catch (err) {
+                console.error("Endpoint Routing Error:", err);
+                previewText.textContent = "Error communicating with backend API engine.";
+                appendInfraction("API routing timeout or key authentication missing.");
+            }
+        }
+
+        function speak(textString) {
+            if (voiceSynthEngine.speaking) voiceSynthEngine.cancel();
+            const speechUtterance = new SpeechSynthesisUtterance(textString);
+            const systemVoicesAvailable = voiceSynthEngine.getVoices();
+            if (systemVoicesAvailable.length > 0) {
+                // Prefers a standard clear male voice style if available locally
+                speechUtterance.voice = systemVoicesAvailable.find(v => v.name.includes('Google US English') || v.lang.startsWith('en')) || systemVoicesAvailable[0];
+            }
+            speechUtterance.rate = 0.95;
+            voiceSynthEngine.speak(speechUtterance);
+        }
+
+        function appendInfraction(infractionText) {
+            if (infractionFeedLog.textContent.includes('No critical script execution infractions')) {
+                infractionFeedLog.innerHTML = '';
+            }
+            const logItem = document.createElement('div');
+            logItem.className = 'text-red-400 font-mono text-[11px] leading-tight border-b border-red-950/30 pb-1';
+            logItem.textContent = `⚠️ Flags: ${infractionText}`;
+            infractionFeedLog.appendChild(logItem);
+            infractionFeedLog.scrollTop = infractionFeedLog.scrollHeight;
+
+            infractionsLog.push(infractionText);
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-qual').textContent = `${scores.qualification} / 25`;
+            document.getElementById('score-script').textContent = `${scores.script} / 25`;
+        }
+
+        function resetVisualChecklist() {
+            for (let i = 1; i <= 9; i++) {
+                const element = document.getElementById(`pt-${i}`);
+                if (element) element.innerHTML = element.innerHTML.replace('✅', '❌');
+            }
+        }
+
+        async function saveSessionToServer() {
+            try {
+                await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agentName: agentNameField.value.trim(),
+                        mode: currentMode,
+                        difficulty: currentDifficulty,
+                        scores: scores,
+                        completedDataPoints: Array.from(completedDataPoints),
+                        transcript: transcriptLog,
+                        infractions: infractionsLog,
+                        startedAt: sessionStartTime ? sessionStartTime.toISOString() : new Date().toISOString(),
+                        endedAt: new Date().toISOString(),
+                    }),
+                });
+            } catch (err) {
+                console.error("Failed to persist session to MongoDB:", err);
+            }
+        }
+
+        async function loadHistoryAndLeaderboard() {
+            historyLoading.classList.remove('hidden');
+            historyContent.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/sessions?limit=30');
+                if (!response.ok) throw new Error('Failed to load session history.');
+                const data = await response.json();
+
+                leaderboardBody.innerHTML = '';
+                (data.leaderboard || []).forEach((row) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-900/50';
+                    tr.innerHTML = `
+                        <td class="py-2 pr-4 font-medium text-slate-200">${escapeHtml(row.agentName)}</td>
+                        <td class="py-2 pr-4">${row.totalCalls}</td>
+                        <td class="py-2 pr-4 text-blue-400">${row.avgQualification} / 25</td>
+                        <td class="py-2 pr-4 text-emerald-400">${row.avgScript} / 25</td>
+                        <td class="py-2 pr-4">${row.bestQualification} / 25</td>
+                        <td class="py-2 pr-4 text-red-400">${row.totalInfractions}</td>
+                    `;
+                    leaderboardBody.appendChild(tr);
+                });
+                if ((data.leaderboard || []).length === 0) {
+                    leaderboardBody.innerHTML = '<tr><td colspan="6" class="py-3 text-slate-500 italic">No sessions recorded yet.</td></tr>';
+                }
+
+                sessionsBody.innerHTML = '';
+                (data.sessions || []).forEach((s) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-900/50';
+                    const dateStr = s.createdAt ? new Date(s.createdAt).toLocaleString() : '—';
+                    const durationStr = s.durationSeconds != null ? `${Math.floor(s.durationSeconds / 60)}m ${s.durationSeconds % 60}s` : '—';
+                    tr.innerHTML = `
+                        <td class="py-2 pr-4">${dateStr}</td>
+                        <td class="py-2 pr-4 font-medium text-slate-200">${escapeHtml(s.agentName || '—')}</td>
+                        <td class="py-2 pr-4">${escapeHtml(s.mode || '—')}</td>
+                        <td class="py-2 pr-4">${escapeHtml(s.difficulty || '—')}</td>
+                        <td class="py-2 pr-4 text-blue-400">${s.scores?.qualification ?? '—'} / 25</td>
+                        <td class="py-2 pr-4 text-emerald-400">${s.scores?.script ?? '—'} / 25</td>
+                        <td class="py-2 pr-4">${durationStr}</td>
+                    `;
+                    sessionsBody.appendChild(tr);
+                });
+                if ((data.sessions || []).length === 0) {
+                    sessionsBody.innerHTML = '<tr><td colspan="7" class="py-3 text-slate-500 italic">No sessions recorded yet.</td></tr>';
+                }
+
+                historyLoading.classList.add('hidden');
+                historyContent.classList.remove('hidden');
+            } catch (err) {
+                console.error("History load error:", err);
+                historyLoading.textContent = "Could not load session history. Check MongoDB connection.";
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        historyBtn.addEventListener('click', () => {
+            historyModal.classList.remove('hidden');
+            historyModal.classList.add('flex');
+            historyLoading.textContent = "Loading session data...";
+            loadHistoryAndLeaderboard();
+        });
+
+        historyCloseBtn.addEventListener('click', () => {
+            historyModal.classList.add('hidden');
+            historyModal.classList.remove('flex');
+        });
+
+        historyModal.addEventListener('click', (e) => {
+            if (e.target === historyModal) {
+                historyModal.classList.add('hidden');
+                historyModal.classList.remove('flex');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "mongodb": "^6.10.0"
+    "@supabase/supabase-js": "^2.45.4"
   }
 }

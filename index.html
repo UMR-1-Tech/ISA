@@ -6,6 +6,7 @@
     <title>U-Tech Call Auditor & ISA Training Simulator</title>
     <!-- Tailwind CSS Script -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             background: linear-gradient(135deg, #090d16 0%, #020617 100%);
@@ -246,6 +247,14 @@
 
         const voiceSynthEngine = window.speechSynthesis;
 
+        // Public anon key — safe to expose in client-side code by design.
+        // Row Level Security policies on the `call_sessions` table control
+        // exactly what this key is allowed to do (insert + read only).
+        const supabaseClient = window.supabase.createClient(
+            'https://hsyenxmnpjqycbuoelrh.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeWVueG1ucGpxeWNidW9lbHJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTI2MDQsImV4cCI6MjA5OTc4ODYwNH0.8EBmIGe38At3soS4BlQF6cer_UZKh6KnMOgG-wEKkaY'
+        );
+
         // Configuration Event Modifiers
         document.getElementById('sim-mode').addEventListener('change', (e) => currentMode = e.target.value);
         document.getElementById('sim-diff').addEventListener('change', (e) => currentDifficulty = e.target.value);
@@ -453,23 +462,27 @@
 
         async function saveSessionToServer() {
             try {
-                await fetch('/api/sessions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        agentName: agentNameField.value.trim(),
-                        mode: currentMode,
-                        difficulty: currentDifficulty,
-                        scores: scores,
-                        completedDataPoints: Array.from(completedDataPoints),
-                        transcript: transcriptLog,
-                        infractions: infractionsLog,
-                        startedAt: sessionStartTime ? sessionStartTime.toISOString() : new Date().toISOString(),
-                        endedAt: new Date().toISOString(),
-                    }),
+                const startedAtDate = sessionStartTime || new Date();
+                const endedAtDate = new Date();
+                const durationSeconds = Math.max(0, Math.round((endedAtDate - startedAtDate) / 1000));
+
+                const { error } = await supabaseClient.from('call_sessions').insert({
+                    agent_name: agentNameField.value.trim(),
+                    mode: currentMode,
+                    difficulty: currentDifficulty,
+                    qualification_score: scores.qualification,
+                    script_score: scores.script,
+                    completed_data_points: Array.from(completedDataPoints),
+                    transcript: transcriptLog,
+                    infractions: infractionsLog,
+                    started_at: startedAtDate.toISOString(),
+                    ended_at: endedAtDate.toISOString(),
+                    duration_seconds: durationSeconds,
                 });
+
+                if (error) throw error;
             } catch (err) {
-                console.error("Failed to persist session to MongoDB:", err);
+                console.error("Failed to persist session to Supabase:", err);
             }
         }
 
@@ -478,9 +491,41 @@
             historyContent.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/sessions?limit=30');
-                if (!response.ok) throw new Error('Failed to load session history.');
-                const data = await response.json();
+                const { data: sessionsData, error: sessionsError } = await supabaseClient
+                    .from('call_sessions')
+                    .select('agent_name, mode, difficulty, qualification_score, script_score, infractions, duration_seconds, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(30);
+
+                if (sessionsError) throw sessionsError;
+
+                const { data: leaderboardData, error: leaderboardError } = await supabaseClient
+                    .from('agent_leaderboard')
+                    .select('*')
+                    .limit(25);
+
+                if (leaderboardError) throw leaderboardError;
+
+                const data = {
+                    sessions: (sessionsData || []).map((s) => ({
+                        agentName: s.agent_name,
+                        mode: s.mode,
+                        difficulty: s.difficulty,
+                        scores: { qualification: s.qualification_score, script: s.script_score },
+                        infractions: s.infractions,
+                        durationSeconds: s.duration_seconds,
+                        createdAt: s.created_at,
+                    })),
+                    leaderboard: (leaderboardData || []).map((row) => ({
+                        agentName: row.agent_name,
+                        totalCalls: row.total_calls,
+                        avgQualification: row.avg_qualification,
+                        avgScript: row.avg_script,
+                        bestQualification: row.best_qualification,
+                        totalInfractions: row.total_infractions,
+                        lastCallAt: row.last_call_at,
+                    })),
+                };
 
                 leaderboardBody.innerHTML = '';
                 (data.leaderboard || []).forEach((row) => {
@@ -525,7 +570,7 @@
                 historyContent.classList.remove('hidden');
             } catch (err) {
                 console.error("History load error:", err);
-                historyLoading.textContent = "Could not load session history. Check MongoDB connection.";
+                historyLoading.textContent = "Could not load session history. Check Supabase connection.";
             }
         }
 

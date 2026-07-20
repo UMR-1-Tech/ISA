@@ -22,10 +22,21 @@ create table if not exists call_sessions (
 create index if not exists idx_call_sessions_created_at on call_sessions (created_at desc);
 create index if not exists idx_call_sessions_agent_name on call_sessions (agent_name);
 
--- Lock the table down: RLS is on and no policies are defined, so only
--- requests using the service_role key (used server-side in api/sessions.js)
--- can read or write. The anon/public key gets nothing.
+-- Lock the table down: RLS is on. We allow the public anon key to INSERT
+-- and SELECT (needed since the frontend now talks to Supabase directly),
+-- but there are no UPDATE/DELETE policies, so nobody can alter or erase
+-- past sessions through the public key.
 alter table call_sessions enable row level security;
+
+drop policy if exists "Allow anon insert" on call_sessions;
+create policy "Allow anon insert" on call_sessions
+    for insert to anon
+    with check (true);
+
+drop policy if exists "Allow anon select" on call_sessions;
+create policy "Allow anon select" on call_sessions
+    for select to anon
+    using (true);
 
 -- Per-agent leaderboard, aggregated on the fly from call_sessions.
 create or replace view agent_leaderboard as
@@ -40,3 +51,8 @@ select
 from call_sessions
 group by agent_name
 order by avg_qualification desc, avg_script desc;
+
+-- Without this, the view runs with the permissions of whoever created it
+-- (bypassing RLS) instead of the actual querying role. security_invoker
+-- makes it respect the anon-select policy above, same as the base table.
+alter view agent_leaderboard set (security_invoker = true);
